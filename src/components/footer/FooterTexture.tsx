@@ -47,3 +47,4 @@ export function FooterTexture() {
 }
 
 export default FooterTexture;
+  

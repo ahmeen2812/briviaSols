@@ -8,9 +8,23 @@ import { CalendlyModal } from "@/components/sections/inquiry/CalendlyModal";
 import { initCtaAnimation } from "./animations";
 import { SearchCtaMobile } from "./mobile/SearchCtaMobile";
 import { useIsomorphicLayoutEffect } from "@/components/shared/useIsomorphicLayoutEffect";
+import { initAboutCtaScrubAnimation } from "@/components/about/animations/aboutAnimations";
 
-export const SearchCta: React.FC = () => {
-  const { cta } = GOOGLE_SEARCH_ADS_CONTENT;
+export interface SearchCtaProps {
+  readonly ctaOverride?: {
+    readonly heading: string;
+    readonly description: string;
+    readonly primaryButtonText: string;
+    readonly secondaryButtonText: string;
+  };
+  readonly useScrubStagger?: boolean;
+}
+
+export const SearchCta: React.FC<SearchCtaProps> = ({
+  ctaOverride,
+  useScrubStagger = false,
+}) => {
+  const cta = ctaOverride ?? GOOGLE_SEARCH_ADS_CONTENT.cta;
   const { meeting } = SITE_CONTACT;
   const [isCalendlyOpen, setIsCalendlyOpen] = useState(false);
 
@@ -18,9 +32,22 @@ export const SearchCta: React.FC = () => {
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const descRef = useRef<HTMLParagraphElement | null>(null);
   const buttonsRef = useRef<HTMLDivElement | null>(null);
+  const primaryBtnRef = useRef<HTMLAnchorElement | null>(null);
+  const secondaryBtnRef = useRef<HTMLButtonElement | null>(null);
 
   useIsomorphicLayoutEffect(() => {
     if (!containerRef.current) return;
+
+    if (useScrubStagger) {
+      const ctx = initAboutCtaScrubAnimation({
+        container: containerRef.current,
+        heading: headingRef.current,
+        description: descRef.current,
+        primaryButton: primaryBtnRef.current,
+        secondaryButton: secondaryBtnRef.current,
+      });
+      return () => ctx.revert();
+    }
 
     const ctx = initCtaAnimation({
       container: containerRef.current,
@@ -30,7 +57,7 @@ export const SearchCta: React.FC = () => {
     });
 
     return () => ctx?.revert();
-  }, []);
+  }, [useScrubStagger]);
 
   return (
     <>
@@ -59,17 +86,19 @@ export const SearchCta: React.FC = () => {
             className="mt-8 flex items-center justify-center gap-4 will-change-transform"
           >
             <Link
+              ref={primaryBtnRef}
               href="/start-project"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#061B3A] via-[#072B5E] to-[#0A5FD7] px-8 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_4px_16px_-2px_rgba(6,27,58,0.35)] hover:shadow-[0_8px_25px_-2px_rgba(10,95,215,0.45)] hover:scale-[1.01] active:scale-[0.98] transition-all"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#061B3A] via-[#072B5E] to-[#0A5FD7] px-8 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_4px_16px_-2px_rgba(6,27,58,0.35)] hover:shadow-[0_8px_25px_-2px_rgba(10,95,215,0.45)] hover:scale-[1.01] active:scale-[0.98] transition-all will-change-transform"
             >
               <span>{cta.primaryButtonText}</span>
               <span aria-hidden="true">→</span>
             </Link>
 
             <button
+              ref={secondaryBtnRef}
               type="button"
               onClick={() => setIsCalendlyOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white border border-slate-300/90 px-7 py-3.5 font-sans text-sm font-semibold text-[#06162C] shadow-2xs hover:bg-slate-50 hover:border-[#0A5FD7]/50 hover:text-[#0A5FD7] active:scale-[0.98] transition-all cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white border border-slate-300/90 px-7 py-3.5 font-sans text-sm font-semibold text-[#06162C] shadow-2xs hover:bg-slate-50 hover:border-[#0A5FD7]/50 hover:text-[#0A5FD7] active:scale-[0.98] transition-all cursor-pointer will-change-transform"
             >
               <span>{cta.secondaryButtonText}</span>
               <span aria-hidden="true">↗</span>
@@ -80,7 +109,11 @@ export const SearchCta: React.FC = () => {
 
       {/* DEDICATED MOBILE VIEWPORT */}
       <div className="block lg:hidden">
-        <SearchCtaMobile onOpenCalendly={() => setIsCalendlyOpen(true)} />
+        <SearchCtaMobile
+          ctaOverride={ctaOverride}
+          useScrubStagger={useScrubStagger}
+          onOpenCalendly={() => setIsCalendlyOpen(true)}
+        />
       </div>
 
       <CalendlyModal
